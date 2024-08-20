@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>title</title>
+    <style>
+        #container {
+            display: grid;
+            grid-template-columns: 1700px 400px; /* 1fr for canvas, 400px for UI container */
+            height: 100vh; /* Full viewport height */
+        }
+        #canvas {
+            width: 100%; /* Ensure the canvas fills its grid cell */
+            height: 100%; /* Full height of the grid cell */
+        }
+
+        #uiContainer {
+            padding: 10px; /* Optional padding */
+        }
+
+        body {
+            margin: 0; /* Remove default margin */
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <canvas id="canvas"></canvas>
+        <div id="uiContainer">
+            <div id="ui">
+            </div>
+        </div>
+    </div>
+    <!--
+    This sample uses TWGL (Tiny WebGL) to hide the clutter.
+    Otherwise the sample would be full of code not related to the point of the sample.
+    For more info see https://webgl2fundamentals.org/webgl/lessons/webgl-less-code-more-fun.html
+    -->
+    <script>
+        const canvas = document.getElementById("canvas");
+        canvas.height = document.documentElement.clientHeight;
+        canvas.width = document.documentElement.clientWidth; // Adjust canvas width
+    </script>
+    <script src="https://webgl2fundamentals.org/webgl/resources/webgl-lessons-ui.js"></script>
+    <script src="https://webgl2fundamentals.org/webgl/resources/twgl-full.min.js"></script>
+    <script src="https://webgl2fundamentals.org/webgl/resources/m4.js"></script>    
+    <script src="shaders.js"></script>
+    <script src="index.js"></script>
+</body>
+</html>
+
+
