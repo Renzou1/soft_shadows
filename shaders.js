@@ -59,7 +59,7 @@ in vec3 v_surfaceToView;
 
 uniform vec4 u_colorMult;
 uniform sampler2D u_texture;
-uniform sampler2D u_projectedTexture;
+uniform sampler2DShadow u_projectedTexture;
 uniform float u_bias;
 uniform float u_shininess;
 uniform vec3 u_lightDirection;
@@ -85,7 +85,7 @@ void main() {
   float light = inLight * dot(normal, surfaceToLightDirection);
   float specular = inLight * pow(dot(normal, halfVector), u_shininess);
 
-  vec3 projectedTexcoord = v_projectedTexcoord.xyz / v_projectedTexcoord.w;
+  //vec3 projectedTexcoord = v_projectedTexcoord.xyz / v_projectedTexcoord.w;
   float currentDepth = projectedTexcoord.z + u_bias;
 
   bool inRange =
@@ -95,13 +95,13 @@ void main() {
       projectedTexcoord.y <= 1.0;
 
   // the 'r' channel has the depth values
-  float projectedDepth = texture(u_projectedTexture, projectedTexcoord.xy).r;
-  float shadowLight = (inRange && projectedDepth <= currentDepth) ? 0.0 : 1.0;
+  float shadowValue = texture(u_projectedTexture, projectedTexcoord);
+  //float shadowLight = (inRange && projectedDepth <= currentDepth) ? 0.0 : 1.0;
 
   vec4 texColor = texture(u_texture, v_texcoord) * u_colorMult;
   outColor = vec4(
-      texColor.rgb * light * shadowLight +
-      specular * shadowLight,
+      texColor.rgb * light * shadowValue +
+      specular * shadowValue,
       texColor.a);
 }
 `;
