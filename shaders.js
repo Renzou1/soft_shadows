@@ -94,6 +94,26 @@ void main() {
       projectedTexcoord.y >= 0.0 &&
       projectedTexcoord.y <= 1.0;
 
+  
+  float shadow = 0.0;
+  ivec2 textureSize2d = textureSize(u_projectedTexture, 0);
+
+  float textureSizeX = float(textureSize2d.x);
+  float textureSizeY = float(textureSize2d.y);  // dont know if Y is necessary
+
+  float ftexelSizeX = 1.0 / textureSizeX;
+  float ftexelSizeY = 1.0 / textureSizeY;
+
+  vec2 texelSize = vec2(ftexelSizeX, ftexelSizeY);
+
+  //for(int x = -1; x <= 1; ++x){
+  //  for(int y = -1; y <=1; ++y){
+  //    float pcfDepth = texture(u_projectedTexture, projectedTexcoord.xy + vec2(x,y) * texelSize).r
+  //    shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
+  //  }
+  //}
+  //shadow /= 9.0;
+
   // the 'r' channel has the depth values
   float projectedDepth = texture(u_projectedTexture, projectedTexcoord.xy).r;
   float shadowLight = (inRange && projectedDepth <= currentDepth) ? 0.0 : 1.0;
