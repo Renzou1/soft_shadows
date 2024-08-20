@@ -94,34 +94,38 @@ void main() {
       projectedTexcoord.y >= 0.0 &&
       projectedTexcoord.y <= 1.0;
 
-  
+  // the 'r' channel has the depth values
+  //float projectedDepth = texture(u_projectedTexture, projectedTexcoord.xy).r;
+  //float shadowLight = (inRange && projectedDepth <= currentDepth) ? 0.0 : 1.0;
+
   float shadow = 0.0;
   ivec2 textureSize2d = textureSize(u_projectedTexture, 0);
 
-  float textureSizeX = float(textureSize2d.x);
-  float textureSizeY = float(textureSize2d.y);  // dont know if Y is necessary
+  float textureSize = float(textureSize2d.x);
+  float ftexelSize = 1.0 / textureSize;
 
-  float ftexelSizeX = 1.0 / textureSizeX;
-  float ftexelSizeY = 1.0 / textureSizeY;
+  //float distance_blocker = currentDepth; // might be flipped
+  //float distance_receiver = projectedDepth; // with this
+  //float light_size = 10;
+  //float penumbra = (distance_receiver - distance_blocker) * light_size / distance_blocker;
+  // func penumbra = 0 -> 0, penumbra = inf -> 14
 
-  vec2 texelSize = vec2(ftexelSizeX, ftexelSizeY);
+  vec2 texelSize = vec2(ftexelSize, ftexelSize);
+  // 9 x 9 PCF
+  for(int x = -4; x <= 4; ++x){
+    for(int y = -4; y <= 4; ++y){
+      float pcfDepth = texture(u_projectedTexture, projectedTexcoord.xy + vec2(x,y) * texelSize).r;
+      shadow += currentDepth < pcfDepth ? 1.0 : 0.0; // was currentDepth - bias, might be different logic
+    }
+  }
+  shadow /= 81.0;
 
-  //for(int x = -1; x <= 1; ++x){
-  //  for(int y = -1; y <=1; ++y){
-  //    float pcfDepth = texture(u_projectedTexture, projectedTexcoord.xy + vec2(x,y) * texelSize).r
-  //    shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
-  //  }
-  //}
-  //shadow /= 9.0;
 
-  // the 'r' channel has the depth values
-  float projectedDepth = texture(u_projectedTexture, projectedTexcoord.xy).r;
-  float shadowLight = (inRange && projectedDepth <= currentDepth) ? 0.0 : 1.0;
 
   vec4 texColor = texture(u_texture, v_texcoord) * u_colorMult;
   outColor = vec4(
-      texColor.rgb * light * shadowLight +
-      specular * shadowLight,
+      texColor.rgb * light * shadow +
+      specular * shadow,
       texColor.a);
 }
 `;
