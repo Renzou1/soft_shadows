@@ -112,17 +112,21 @@ void main() {
   // func penumbra = 0 -> 0, penumbra = inf -> 14
   // read https://developer.download.nvidia.com/shaderlibrary/docs/shadow_PCSS.pdf to see what to do with penumbra
   int pcfSize = int(penumbra * 30.0);
-  int total_calculations = pcfSize * 2 + 1; // scales linearly
-  int step_size = total_calculations / 9;
-  // 9 x 9 PCF
-  for(int x = -pcfSize; x <= pcfSize; x+=step_size){
-    for(int y = -pcfSize; y <= pcfSize; y+=step_size){
-      float pcfDepth = texture(u_projectedTexture, projectedTexcoord.xy + vec2(x,y) * texelSize).r;
+  int iterator_range = pcfSize * 2 + 1; // scales linearly
+  int step_size = iterator_range / 9;
+  // PCF based on penumbra
+  int x = -pcfSize;
+  int y = -pcfSize;  
+  for(int i = -pcfSize; i <= pcfSize; ++i){
+    for(int j = -pcfSize; j <= pcfSize; ++j){
+      float pcfDepth = texture(u_projectedTexture, projectedTexcoord.xy + vec2(i,j) * texelSize).r;
       shadow += currentDepth < pcfDepth ? 1.0 : 0.0; // was currentDepth - bias, might be different logic
+      y+= step_size;
     }
+    x+= step_size; 
   }
-  //float total_calculations = float(pcfSize * 2 + 1) * float(pcfSize * 2 + 1);
-  shadow /= float(total_calculations);
+  
+  shadow /= 81.0; // 9 * 9 (based on step size)
 
   vec4 texColor = texture(u_texture, v_texcoord) * u_colorMult;
   outColor = vec4(
