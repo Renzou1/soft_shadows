@@ -103,22 +103,26 @@ void main() {
 
   float textureSize = float(textureSize2d.x);
   float ftexelSize = 1.0 / textureSize;
+  vec2 texelSize = vec2(ftexelSize, ftexelSize);
 
-  float distance_blocker = currentDepth - u_bias; // might be flipped (removed bias that added before, inefficient)
-  float distance_receiver = projectedDepth; // with this
-  float light_size = 1.0; // adjust later
+  float distance_blocker = projectedDepth; // (removed bias that added before, inefficient)
+  float distance_receiver =  currentDepth - u_bias; // might be flipped
+  float light_size = 2.0; // adjust later
   float penumbra = (distance_receiver - distance_blocker) * light_size / distance_blocker;
   // func penumbra = 0 -> 0, penumbra = inf -> 14
   // read https://developer.download.nvidia.com/shaderlibrary/docs/shadow_PCSS.pdf to see what to do with penumbra
-  vec2 texelSize = vec2(ftexelSize, ftexelSize);
+  int pcfSize = int(penumbra * 30.0);
+  int total_calculations = pcfSize * 2 + 1; // scales linearly
+  int step_size = total_calculations / 9;
   // 9 x 9 PCF
-  for(int x = -4; x <= 4; ++x){
-    for(int y = -4; y <= 4; ++y){
+  for(int x = -pcfSize; x <= pcfSize; x+=step_size){
+    for(int y = -pcfSize; y <= pcfSize; y+=step_size){
       float pcfDepth = texture(u_projectedTexture, projectedTexcoord.xy + vec2(x,y) * texelSize).r;
       shadow += currentDepth < pcfDepth ? 1.0 : 0.0; // was currentDepth - bias, might be different logic
     }
   }
-  shadow /= 81.0;
+  //float total_calculations = float(pcfSize * 2 + 1) * float(pcfSize * 2 + 1);
+  shadow /= float(total_calculations);
 
   vec4 texColor = texture(u_texture, v_texcoord) * u_colorMult;
   outColor = vec4(
