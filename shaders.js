@@ -88,47 +88,52 @@ void main() {
   vec3 projectedTexcoord = v_projectedTexcoord.xyz / v_projectedTexcoord.w;
   float currentDepth = projectedTexcoord.z + u_bias;
 
-  bool inRange =
-      projectedTexcoord.x >= 0.0 &&
-      projectedTexcoord.x <= 1.0 &&
-      projectedTexcoord.y >= 0.0 &&
-      projectedTexcoord.y <= 1.0;
-
-  // the 'r' channel has the depth values
   float projectedDepth = texture(u_projectedTexture, projectedTexcoord.xy).r;
-  //float shadowLight = (inRange && projectedDepth <= currentDepth) ? 0.0 : 1.0;
 
-  float shadow = 0.0;
+  // PCSS:
+
+  // blocker average
+  float average_depth = 0.0;
+  float total = 0.0;
+  for(int i = -4; i <= 4; ++i){
+    for(int j = -4; j <= 4; ++j){
+      average_depth += projectedDepth < currentDepth ? projectedDepth : 0.0;
+      total += projectedDepth < currentDepth ? 1.0 : 0.0;
+    }
+  }
+  average_depth /= total;
+
+  // calculate penumbra based on https://developer.download.nvidia.com/shaderlibrary/docs/shadow_PCSS.pdf paper
+  float distance_blocker = average_depth; 
+  float distance_receiver =  currentDepth;
+  float light_size = 60.0; // adjust as needed
+  float penumbra = (distance_receiver - distance_blocker) * light_size / distance_blocker;
+
+  // PCF based on penumbra
+  int pcfSize = int(penumbra);
+  int iterator_range = pcfSize * 2 + 1; // scales linearly
+  int step_size = iterator_range / 9;
+
+  // gets texel size
   ivec2 textureSize2d = textureSize(u_projectedTexture, 0);
-
   float textureSize = float(textureSize2d.x);
   float ftexelSize = 1.0 / textureSize;
   vec2 texelSize = vec2(ftexelSize, ftexelSize);
 
-  float distance_blocker = projectedDepth; // (removed bias that added before, inefficient)
-  float distance_receiver =  currentDepth - u_bias; // might be flipped
-  float light_size = 1.0; // adjust later
-  float penumbra = (distance_receiver - distance_blocker) * light_size / distance_blocker;
-  // func penumbra = 0 -> 0, penumbra = inf -> 14
-  // read https://developer.download.nvidia.com/shaderlibrary/docs/shadow_PCSS.pdf to see what to do with penumbra
-  int pcfSize = int(penumbra * 60.0);
-  int iterator_range = pcfSize * 2 + 1; // scales linearly
-  int step_size = iterator_range / 9;
-  // PCF based on penumbra
-  int x = -pcfSize;
-  int y = -pcfSize;  
+  // PCF loop
+  
+  float shadow = 0.0;  
   for(int i = -pcfSize; i <= pcfSize; ++i){
     for(int j = -pcfSize; j <= pcfSize; ++j){
-      float pcfDepth = texture(u_projectedTexture, projectedTexcoord.xy + vec2(x,y) * texelSize).r; // change i and j for x and y for better performance?
+      float pcfDepth = texture(u_projectedTexture, projectedTexcoord.xy + vec2(i,j) * texelSize).r; // change i and j for x and y for better performance?
       shadow += currentDepth < pcfDepth ? 1.0 : 0.0; // was currentDepth - bias, might be different logic
-      y+= step_size;
     }
-    x+= step_size; 
-    y = -pcfSize;
   }
   float total_calculations = float((pcfSize * 2 + 1) * (pcfSize * 2 + 1));
   shadow /= total_calculations; // 9 * 9 (based on step size)
 
+
+  // out Color based on previous loop
   vec4 texColor = texture(u_texture, v_texcoord) * u_colorMult;
   outColor = vec4(
       texColor.rgb * light * shadow +
