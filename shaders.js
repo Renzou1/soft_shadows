@@ -121,7 +121,7 @@ void main() {
   vec2 texelSize = vec2(ftexelSize, ftexelSize);
 
   // PCF loop
-  
+  pcfSize = (pcfSize < 30) ? pcfSize : 30;
   float shadow = 0.0;  
   for(int i = -pcfSize; i <= pcfSize; ++i){
     for(int j = -pcfSize; j <= pcfSize; ++j){
