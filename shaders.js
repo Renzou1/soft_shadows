@@ -121,22 +121,27 @@ void main() {
   vec2 texelSize = vec2(ftexelSize, ftexelSize);
 
   // PCF loop
+  int start = -pcfSize;
+  int max = pcfSize * 2 + 1;
+  float shadow = 0.0;
+  int i = 0;
+  int j = 0;
+  int limit = 15;
 
-  float shadow = 0.0;  
-  for(int i = 0; i <= 9; ++i){
-    for(int j = 0; j <= 9; ++j){
+  for(i = 0; i < limit; ++i){
+    for(j = 0; j < limit; ++j){
       //Tausworthe random number generator
-      int x = int((527 << 5) ^ 527 >> 8);
-      x = ( ( ( ( (527 & 20) << 7) ^ x ) ) % (pcfSize*2 + 1) ) - pcfSize;
+      int x = int((527+i << 5) ^ 527+i >> 8);
+      x = ( (( ((527+i & 20+j) << 7) ^ x) ) % (max) ) + start;
 
-      int y = int((312 << 2) ^ 312 >> 9);
-      y = ( ( ( ( (312 & 18) << 3) ^ y ) ) % (pcfSize*2 + 1) ) - pcfSize;
+      int y = int((312+i << 2) ^ 312+i >> 9);
+      y = ( (( ((312+i & 18+j) << 3) ^ y) ) % (max) ) + start;
 
-      float pcfDepth = texture(u_projectedTexture, projectedTexcoord.xy + vec2(x,y) * texelSize).r; // change i and j for x and y for better performance?
-      shadow += currentDepth < pcfDepth ? 1.0 : 0.0; // was currentDepth - bias, might be different logic
+      float pcfDepth = texture(u_projectedTexture, projectedTexcoord.xy + vec2(x,y) * texelSize).r;
+      shadow += currentDepth < pcfDepth ? 1.0 : 0.0;
     }
   }
-  float total_calculations = 100.0;
+  float total_calculations = float(limit * limit);
   shadow /= total_calculations;
 
 
