@@ -112,7 +112,7 @@ void main() {
   // PCF based on penumbra
   int pcfSize = int(penumbra);
   int iterator_range = pcfSize; // scales linearly
-  int step_size = iterator_range / 5;
+  int step_size = iterator_range / 4;
 
   // gets texel size
   ivec2 textureSize2d = textureSize(u_projectedTexture, 0);
@@ -121,17 +121,20 @@ void main() {
   vec2 texelSize = vec2(ftexelSize, ftexelSize);
 
   // PCF loop
-  int x = -pcfSize;
-  int y = -pcfSize;  
+
   float shadow = 0.0;  
   for(int i = 0; i <= 9; ++i){
     for(int j = 0; j <= 9; ++j){
+      //Tausworthe random number generator
+      int x = int((527 << 5) ^ 527 >> 8);
+      x = ( ( ( ( (527 & 20) << 7) ^ x ) ) % (pcfSize*2 + 1) ) - pcfSize;
+
+      int y = int((312 << 2) ^ 312 >> 9);
+      y = ( ( ( ( (312 & 18) << 3) ^ y ) ) % (pcfSize*2 + 1) ) - pcfSize;
+
       float pcfDepth = texture(u_projectedTexture, projectedTexcoord.xy + vec2(x,y) * texelSize).r; // change i and j for x and y for better performance?
       shadow += currentDepth < pcfDepth ? 1.0 : 0.0; // was currentDepth - bias, might be different logic
-      y+= step_size;
     }
-    x+= step_size; 
-    y = -pcfSize;
   }
   float total_calculations = 100.0;
   shadow /= total_calculations;
