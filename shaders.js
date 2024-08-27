@@ -109,28 +109,24 @@ void main() {
   float light_size = 60.0; // adjust as needed
   float penumbra = (distance_receiver - distance_blocker) * light_size / distance_blocker;
 
-  // PCF based on penumbra
-  int pcfSize = int(penumbra);
-  int iterator_range = pcfSize * 2 + 1; // scales linearly
-  int step_size = iterator_range / 9;
-
   // gets texel size
   ivec2 textureSize2d = textureSize(u_projectedTexture, 0);
   float textureSize = float(textureSize2d.x);
   float ftexelSize = 1.0 / textureSize;
   vec2 texelSize = vec2(ftexelSize, ftexelSize);
 
-  // PCF loop
+  // PCF loop based on penumbra
+  int pcfSize = int(penumbra);
   pcfSize = (pcfSize < 30) ? pcfSize : 30;
   float shadow = 0.0;  
   for(int i = -pcfSize; i <= pcfSize; ++i){
     for(int j = -pcfSize; j <= pcfSize; ++j){
-      float pcfDepth = texture(u_projectedTexture, projectedTexcoord.xy + vec2(i,j) * texelSize).r; // change i and j for x and y for better performance?
-      shadow += currentDepth < pcfDepth ? 1.0 : 0.0; // was currentDepth - bias, might be different logic
+      float pcfDepth = texture(u_projectedTexture, projectedTexcoord.xy + vec2(i,j) * texelSize).r;
+      shadow += currentDepth < pcfDepth ? 1.0 : 0.0;
     }
   }
   float total_calculations = float((pcfSize * 2 + 1) * (pcfSize * 2 + 1));
-  shadow /= total_calculations; // 9 * 9 (based on step size)
+  shadow /= total_calculations;
 
 
   // out Color based on previous loop
